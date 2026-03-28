@@ -1,1 +1,28 @@
+name: Update Blocklists
 
+on:
+  schedule:
+    - cron: '0 2 * * *'  # svaki dan u 2:00 UTC
+  workflow_dispatch:       # omogući ručno pokretanje
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download latest lists
+        run: |
+          curl -s "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" -o blocklist.txt
+          curl -s "https://raw.githubusercontent.com/StevenBlack/hosts/master/data/StevenBlack/hosts" -o ads.txt
+          curl -s "https://raw.githubusercontent.com/nicehash/easyprivacy/master/easyprivacy_trackingservers.txt" -o trackers.txt
+          curl -s "https://raw.githubusercontent.com/StevenBlack/hosts/master/data/add.Risk/hosts" -o malware.txt
+          echo "$(date +%Y-%m-%d)" > version.txt
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add blocklist.txt ads.txt trackers.txt malware.txt version.txt
+          git diff --staged --quiet || git commit -m "Update lists $(date +%Y-%m-%d)"
+          git push
